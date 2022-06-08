@@ -27,7 +27,8 @@ contract SetupTest is DSTest {
     enum AUCTION_STATUS {
         NOT_ASSIGNED,
         STARTED,
-        SOLD
+        SOLD,
+        CLOSED
     }
 
     enum VERIFY_RESULT {
@@ -86,10 +87,17 @@ contract SetupTest is DSTest {
         MINT_FOR_TEST mintForTest_
     ) public {
         if(mintForTest_ == MINT_FOR_TEST.MINT) {
-            mockERC721.mint(seller_, tokenId_);
+            if (nftContractType_ == NFT_CONTRACT.ERC721) {
+                mockERC721.mint(seller_, tokenId_);
+                vm.prank(seller_);
+                mockERC721.approve(address(dutchAuction), tokenId_);
+            }
+            if (nftContractType_ == NFT_CONTRACT.ERC721_UPGRADEABLE) {
+                mockERC721Upgradeable.mint(seller_, tokenId_);
+                vm.prank(seller_);
+                mockERC721Upgradeable.approve(address(dutchAuction), tokenId_);
+            }
         }
-        vm.prank(seller_);
-        mockERC721.approve(address(dutchAuction), tokenId_);
 
         vm.prank(seller_);
         dutchAuction.createAuction(

@@ -22,6 +22,7 @@ contract DutchAuctionTest is SetupTest {
         uint256 startPrice = 10 ether;
         uint256 endDate = block.timestamp + 1_000_000;
         uint256 endPrice = 1 ether;
+
         help_createAuction(
             seller,
             tokenContract,
@@ -45,6 +46,7 @@ contract DutchAuctionTest is SetupTest {
         uint256 endDate = block.timestamp + 1_000_000;
         uint256 endPrice = 1 ether;
         address buyer = address(2);
+
         help_createAuction(
             seller,
             tokenContract,
@@ -85,6 +87,7 @@ contract DutchAuctionTest is SetupTest {
         uint256 startPrice = 10 ether;
         uint256 endDate = block.timestamp + 1_000_000;
         uint256 endPrice = 1 ether;
+
         help_createAuction(
             seller,
             tokenContract,
@@ -124,6 +127,7 @@ contract DutchAuctionTest is SetupTest {
         uint256 startPrice = 11 ether;
         uint256 endDate = block.timestamp + 100;
         uint256 endPrice = 1 ether;
+
         help_createAuction(
             seller,
             tokenContract,
@@ -157,6 +161,7 @@ contract DutchAuctionTest is SetupTest {
         uint256 startPrice = 11 ether;
         uint256 endDate = block.timestamp + 100;
         uint256 endPrice = 4 ether;
+
         help_createAuction(
             seller,
             tokenContract,
@@ -190,6 +195,7 @@ contract DutchAuctionTest is SetupTest {
         uint256 startPrice = 100;
         uint256 endDate = block.timestamp + 100;
         uint256 endPrice = 0;
+        
         help_createAuction(
             seller,
             tokenContract,
