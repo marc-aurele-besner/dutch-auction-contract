@@ -71,10 +71,10 @@ contract DutchAuction is AccessControlUpgradeable {
         uint256 endDate_,
         uint256 endPrice_
     ) external {
-        require(startDate_ >= block.timestamp, "Start date must be in the future");
-        require(endDate_ > startDate_, "End date must be after start date");
-        require(endPrice_ < startPrice_, "End price must be smaller than start price or 0");
-        require(validNfts[nftContract_], "Token contract is not valid");
+        require(startDate_ >= block.timestamp, "DutchAuction: Start date must be in the future");
+        require(endDate_ > startDate_, "DutchAuction: End date must be after start date");
+        require(endPrice_ < startPrice_, "DutchAuction: End price must be smaller than start price or 0");
+        require(validNfts[nftContract_], "DutchAuction: Token contract is not valid");
 
         uint256 auctionId = getAuctionId(msg.sender, nftContract_, tokenId_, startDate_, startPrice_, endDate_);
         require(auctions[auctionId].status == AUCTION_STATUS.NOT_ASSIGNED, "Auction already exists");
@@ -95,10 +95,8 @@ contract DutchAuction is AccessControlUpgradeable {
     }
 
     function bid(uint256 auctionId_) external {
-        require(auctions[auctionId_].status == AUCTION_STATUS.STARTED, "Auction id not valid or already finished");
-        require(auctions[auctionId_].endDate >= block.timestamp, "Auction has already finished");
-
         uint256 bidPrice = getAuctionPrice(auctionId_);
+        require(bidPrice > 0, "DutchAuction: Auction id not valid or already finished");
         auctions[auctionId_].status = AUCTION_STATUS.SOLD;
 
         require(token.transferFrom(msg.sender, auctions[auctionId_].tokenOwner, bidPrice), "DutchAuction: Failed to transfer token");
@@ -108,8 +106,8 @@ contract DutchAuction is AccessControlUpgradeable {
     }
 
     function reclaim(uint256 auctionId_) external {
-        require(auctions[auctionId_].status == AUCTION_STATUS.STARTED, "Auction id not valid or already finished");
-        require(auctions[auctionId_].endDate < block.timestamp, "Auction is not finished");
+        require(auctions[auctionId_].status == AUCTION_STATUS.STARTED, "DutchAuction: Auction id not valid or already finished");
+        require(auctions[auctionId_].endDate < block.timestamp, "DutchAuction: Auction is not finished");
         auctions[auctionId_].status = AUCTION_STATUS.CLOSED;
 
         emit AuctionClosed(auctionId_, auctions[auctionId_].tokenOwner, 0);
@@ -119,8 +117,8 @@ contract DutchAuction is AccessControlUpgradeable {
 
     function getAuctionPrice(uint256 auctionId_) public view returns (uint256) {
         Auctions memory auction = auctions[auctionId_];
-        require(auction.status == AUCTION_STATUS.STARTED, "Auction id not valid or already finished");
-        require(auction.endDate >= block.timestamp, "Auction has already finished");
+        require(auction.status == AUCTION_STATUS.STARTED, "DutchAuction: Auction id not valid or already finished");
+        require(auction.endDate >= block.timestamp, "DutchAuction: Auction has already finished");
 
         if(block.timestamp <= auction.startDate)
             return auction.startPrice;

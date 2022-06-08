@@ -14,7 +14,7 @@ contract DutchAuctionTest is SetupTest {
         deployAndInitializeAllContracts();
     }
 
-    function test_createAuction() public {
+    function test_createAuction_with_mockERC721() public {
         address seller = address(1);
         address tokenContract = address(mockERC721);
         uint256 tokenId = 1;
@@ -31,9 +31,54 @@ contract DutchAuctionTest is SetupTest {
             startPrice,
             endDate,
             endPrice,
-            NFT_CONTRACT.ERC721,
+            CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.MINT
+        );
+    }
+    function test_createAuction_with_MockERC721Upgradeable() public {
+        address seller = address(1);
+        address tokenContract = address(mockERC721Upgradeable);
+        uint256 tokenId = 1;
+        uint256 startDate = block.timestamp;
+        uint256 startPrice = 10 ether;
+        uint256 endDate = block.timestamp + 1_000_000;
+        uint256 endPrice = 1 ether;
+
+        help_createAuction(
+            seller,
+            tokenContract,
+            tokenId,
+            startDate,
+            startPrice,
+            endDate,
+            endPrice,
+            CONTRACT.ERC721_UPGRADEABLE,
+            VERIFY_RESULT.VERIFY,
+            MINT_FOR_TEST.MINT
+        );
+    }
+    function test_createAuction_without_balance() public {
+        address seller = address(1);
+        address tokenContract = address(mockERC721);
+        uint256 tokenId = 1;
+        uint256 startDate = block.timestamp;
+        uint256 startPrice = 10 ether;
+        uint256 endDate = block.timestamp + 1_000_000;
+        uint256 endPrice = 1 ether;
+
+        help_createAuction(
+            seller,
+            tokenContract,
+            tokenId,
+            startDate,
+            startPrice,
+            endDate,
+            endPrice,
+            CONTRACT.ERC721,
+            VERIFY_RESULT.VERIFY,
+            MINT_FOR_TEST.DO_NOT_MINT,
+            ERROR_OPPERATOR_NOEXIST_TOKEN
         );
     }
 
@@ -55,7 +100,7 @@ contract DutchAuctionTest is SetupTest {
             startPrice,
             endDate,
             endPrice,
-            NFT_CONTRACT.ERC721,
+            CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.MINT
         );
@@ -96,7 +141,7 @@ contract DutchAuctionTest is SetupTest {
             startPrice,
             endDate,
             endPrice,
-            NFT_CONTRACT.ERC721,
+            CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.MINT
         );
@@ -136,7 +181,7 @@ contract DutchAuctionTest is SetupTest {
             startPrice,
             endDate,
             endPrice,
-            NFT_CONTRACT.ERC721,
+            CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.MINT
         );
@@ -170,7 +215,7 @@ contract DutchAuctionTest is SetupTest {
             startPrice,
             endDate,
             endPrice,
-            NFT_CONTRACT.ERC721,
+            CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.MINT
         );
@@ -204,7 +249,7 @@ contract DutchAuctionTest is SetupTest {
             startPrice,
             endDate,
             endPrice,
-            NFT_CONTRACT.ERC721,
+            CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.MINT
         );

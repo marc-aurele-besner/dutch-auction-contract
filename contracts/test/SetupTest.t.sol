@@ -41,14 +41,26 @@ contract SetupTest is DSTest {
         MINT
     }
 
-    enum NFT_CONTRACT {
+    enum CONTRACT {
+        ERC20,
         ERC721,
         ERC721_UPGRADEABLE
     }
 
     uint16 constant LOOP_COUNT_PRICE_VERIFICATION = 10;
 
-    mapping(uint256 => NFT_CONTRACT) public nftContracts;
+    bytes constant ERROR_OWNER_NOEXIST_TOKEN = "ERC721: owner query for nonexistent token";
+    bytes constant ERROR_OPPERATOR_NOEXIST_TOKEN = "ERC721: operator query for nonexistent token";
+
+    bytes constant ERROR_START_DATE_IN_THE_PASS = "DutchAuction: Start date must be in the future";
+    bytes constant ERROR_END_DATE_SMALLER_THAN_START_DATE = "DutchAuction: End date must be after start date";
+    bytes constant ERROR_END_PRICE_NOT_ZERO_AND_SMALLER_THAN_START = "DutchAuction: End price must be smaller than start price or 0";
+    bytes constant ERROR_CONTRACT_NOT_VALID = "DutchAuction: Token contract is not valid";
+    bytes constant ERROR_AUCTION_ID_NOT_VALID = "DutchAuction: Auction id not valid or already finished";
+    bytes constant ERROR_AUCTION_NOT_FINISHED = "DutchAuction: Auction is not finished";
+    bytes constant ERROR_AUCTION_ALREADY_FINISHED = "DutchAuction: Auction has already finished";
+
+    mapping(uint256 => CONTRACT) public nftContracts;
 
     function deployAndInitializeAllContracts() public {
         // Set block.number and block.timestamp to 1 instead of 0
@@ -74,6 +86,58 @@ contract SetupTest is DSTest {
         dutchAuction.setNftContract(address(mockERC721Upgradeable), true);
     }
 
+    function help_mint(
+        address signer_,
+        address receiver_,
+        uint256 amountOrTokenId_,
+        CONTRACT contractType_,
+        VERIFY_RESULT verification_
+    ) public {
+        if (contractType_ == CONTRACT.ERC20) {
+            vm.prank(signer_);
+            mockERC20.mint(receiver_, amountOrTokenId_);
+        }
+        if (contractType_ == CONTRACT.ERC721) {
+            vm.prank(signer_);
+            mockERC721.mint(receiver_, amountOrTokenId_);
+        }
+        if (contractType_ == CONTRACT.ERC721_UPGRADEABLE) {
+            vm.prank(signer_);
+            mockERC721Upgradeable.mint(receiver_, amountOrTokenId_);
+        }
+        if (verification_ == VERIFY_RESULT.VERIFY) {
+            if (contractType_ == CONTRACT.ERC20) {
+                assertEq(mockERC20.balanceOf(receiver_), amountOrTokenId_);
+            }
+            if (contractType_ == CONTRACT.ERC721) {
+                assertEq(mockERC721.ownerOf(amountOrTokenId_), address(receiver_));
+            }
+            if (contractType_ == CONTRACT.ERC721_UPGRADEABLE) {
+                assertEq(mockERC721Upgradeable.ownerOf(amountOrTokenId_), address(receiver_));
+            }
+        }
+    }
+
+    function help_approve(
+        address signer_,
+        address receiver_,
+        uint256 amountOrTokenId_,
+        CONTRACT contractType_
+    ) public {
+        if (contractType_ == CONTRACT.ERC20) {
+            vm.prank(signer_);
+            mockERC20.approve(receiver_, amountOrTokenId_);
+        }
+        if (contractType_ == CONTRACT.ERC721) {
+            vm.prank(signer_);
+            mockERC721.approve(address(dutchAuction), amountOrTokenId_);
+        }
+        if (contractType_ == CONTRACT.ERC721_UPGRADEABLE) {
+            vm.prank(signer_);
+            mockERC721Upgradeable.approve(address(dutchAuction), amountOrTokenId_);
+        }
+    }
+
     function help_createAuction(
         address seller_,
         address tokenContract_,
@@ -81,24 +145,8 @@ contract SetupTest is DSTest {
         uint256 startDate_,
         uint256 startPrice_,
         uint256 endDate_,
-        uint256 endPrice_,
-        NFT_CONTRACT nftContractType_,
-        VERIFY_RESULT verification_,
-        MINT_FOR_TEST mintForTest_
-    ) public {
-        if(mintForTest_ == MINT_FOR_TEST.MINT) {
-            if (nftContractType_ == NFT_CONTRACT.ERC721) {
-                mockERC721.mint(seller_, tokenId_);
-                vm.prank(seller_);
-                mockERC721.approve(address(dutchAuction), tokenId_);
-            }
-            if (nftContractType_ == NFT_CONTRACT.ERC721_UPGRADEABLE) {
-                mockERC721Upgradeable.mint(seller_, tokenId_);
-                vm.prank(seller_);
-                mockERC721Upgradeable.approve(address(dutchAuction), tokenId_);
-            }
-        }
-
+        uint256 endPrice_
+    ) public returns (uint256 auctionId) {
         vm.prank(seller_);
         dutchAuction.createAuction(
             DutchAuction.TOKEN_TYPE.ERC721,
@@ -109,21 +157,71 @@ contract SetupTest is DSTest {
             endDate_,
             endPrice_
         );
-        uint256 auctionId = dutchAuction.getAuctionId(seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_);
+        return dutchAuction.getAuctionId(seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_);
+    }
+
+    function help_createAuction(
+        address seller_,
+        address tokenContract_,
+        uint256 tokenId_,
+        uint256 startDate_,
+        uint256 startPrice_,
+        uint256 endDate_,
+        uint256 endPrice_,
+        CONTRACT nftContractType_,
+        VERIFY_RESULT verification_,
+        MINT_FOR_TEST mintForTest_
+    ) public {
+        if (mintForTest_ == MINT_FOR_TEST.MINT) {
+            help_mint(seller_, seller_, tokenId_, nftContractType_, verification_);
+            help_approve(seller_, address(dutchAuction), tokenId_, nftContractType_);
+        }
+        uint256 auctionId = help_createAuction(seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_, endPrice_);
         nftContracts[auctionId] = nftContractType_;
 
         if (verification_ == VERIFY_RESULT.VERIFY) {
             DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId);
             assertTrue(auction.status == DutchAuction.AUCTION_STATUS.STARTED);
-            if (nftContracts[auctionId] == NFT_CONTRACT.ERC721) {
+            if (nftContracts[auctionId] == CONTRACT.ERC721) {
                 assertTrue(auction.tokenContract == address(mockERC721));
                 assertEq(mockERC721.ownerOf(auction.tokenId), address(dutchAuction));
             }
-            if (nftContracts[auctionId] == NFT_CONTRACT.ERC721_UPGRADEABLE) {
+            if (nftContracts[auctionId] == CONTRACT.ERC721_UPGRADEABLE) {
                 assertTrue(auction.tokenContract == address(mockERC721Upgradeable));
                 assertEq(mockERC721Upgradeable.ownerOf(auction.tokenId), address(dutchAuction));
             }
         }
+    }
+
+    function help_createAuction(
+        address seller_,
+        address tokenContract_,
+        uint256 tokenId_,
+        uint256 startDate_,
+        uint256 startPrice_,
+        uint256 endDate_,
+        uint256 endPrice_,
+        CONTRACT nftContractType_,
+        VERIFY_RESULT verification_,
+        MINT_FOR_TEST mintForTest_,
+        bytes memory revertMessage_
+    ) public {
+        if (mintForTest_ == MINT_FOR_TEST.MINT) {
+            help_mint(seller_, seller_, tokenId_, nftContractType_, verification_);
+            help_approve(seller_, address(dutchAuction), tokenId_, nftContractType_);
+        }
+
+        vm.prank(seller_);
+        vm.expectRevert(revertMessage_);
+        dutchAuction.createAuction(
+            DutchAuction.TOKEN_TYPE.ERC721,
+            tokenContract_,
+            tokenId_,
+            startDate_,
+            startPrice_,
+            endDate_,
+            endPrice_
+        );
     }
 
     function help_bid(
@@ -135,12 +233,10 @@ contract SetupTest is DSTest {
         uint256 sellPrice = dutchAuction.getAuctionPrice(auctionId_);
 
         if(mintForTest_ == MINT_FOR_TEST.MINT) {
-            mockERC20.mint(buyer_, sellPrice);
+            help_mint(buyer_, buyer_, sellPrice, CONTRACT.ERC20, verification_);
+            help_approve(buyer_, address(dutchAuction), sellPrice * 2, CONTRACT.ERC20);
         }
         uint256 originalTokenBalance = mockERC20.balanceOf(buyer_);
-
-        vm.prank(buyer_);
-        mockERC20.approve(address(dutchAuction), sellPrice);
 
         vm.prank(buyer_);
         dutchAuction.bid(auctionId_);
@@ -148,9 +244,9 @@ contract SetupTest is DSTest {
         if (verification_ == VERIFY_RESULT.VERIFY) {
             DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId_);
             assertTrue(auction.status == DutchAuction.AUCTION_STATUS.SOLD);
-            if (nftContracts[auctionId_] == NFT_CONTRACT.ERC721)
+            if (nftContracts[auctionId_] == CONTRACT.ERC721)
                 assertEq(mockERC721.ownerOf(auction.tokenId), buyer_);
-            if (nftContracts[auctionId_] == NFT_CONTRACT.ERC721_UPGRADEABLE)
+            if (nftContracts[auctionId_] == CONTRACT.ERC721_UPGRADEABLE)
                 assertEq(mockERC721Upgradeable.ownerOf(auction.tokenId), buyer_);
             assertEq(mockERC20.balanceOf(buyer_), originalTokenBalance - sellPrice);
         }
@@ -168,9 +264,9 @@ contract SetupTest is DSTest {
             DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId_);
             assertTrue(auction.status == DutchAuction.AUCTION_STATUS.CLOSED);
             
-            if (nftContracts[auctionId_] == NFT_CONTRACT.ERC721)
+            if (nftContracts[auctionId_] == CONTRACT.ERC721)
                 assertEq(mockERC721.ownerOf(auction.tokenId), auction.tokenOwner);
-            if (nftContracts[auctionId_] == NFT_CONTRACT.ERC721_UPGRADEABLE)
+            if (nftContracts[auctionId_] == CONTRACT.ERC721_UPGRADEABLE)
                 assertEq(mockERC721Upgradeable.ownerOf(auction.tokenId), auction.tokenOwner);
         }
     }
