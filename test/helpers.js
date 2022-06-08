@@ -84,8 +84,15 @@ const setupContract = async () => {
     return [mockERC20, mockERC721, mockERC721Upgradeable, dutchAuction];
 };
 
+const help_mint = async (signer_, address_, amount_, nftContractType_) => {
+    if(nftContractType_ == NFT_CONTRACT_ERC721)
+        await mockERC721.connect(signer_).mint(address_, amount_);
+    if(nftContractType_ == NFT_CONTRACT_ERC721_UPGRADEABLE)
+        await mockERC721Upgradeable.connect(signer_).mint(address_, amount_);
+}
+
 const help_createAuction = async (seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_, endPrice_, nftContractType_, verification_, mintForTest_) => {
-    if(mintForTest_) {
+    if(mintForTest_ == MINT_FOR_TEST_MINT) {
         if(nftContractType_ == NFT_CONTRACT_ERC721) {
             await mockERC721.mint(seller_.address, tokenId_);
             await mockERC721.connect(seller_).approve(dutchAuction.address, tokenId_);
@@ -104,10 +111,10 @@ const help_createAuction = async (seller_, tokenContract_, tokenId_, startDate_,
         endDate_,
         endPrice_
     );
-    const auctionId = await dutchAuction.getAuctionId(seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_);
+    const auctionId = await dutchAuction.getAuctionId(seller_.address, tokenContract_, tokenId_, startDate_, startPrice_, endDate_);
     nftContracts[auctionId] = nftContractType_;
 
-    if (verification_) {
+    if (verification_ == VERIFY_RESULT_VERIFY) {
         const auction = await dutchAuction.getAuction(auctionId);
         expect(auction.status).to.be.equal(AUCTION_STATUS_STARTED);
         if (nftContracts[auctionId] == NFT_CONTRACT_ERC721) {
@@ -124,30 +131,29 @@ const help_createAuction = async (seller_, tokenContract_, tokenId_, startDate_,
 const help_bid = async (buyer_, auctionId_, verification_, mintForTest_) => {
     const sellPrice = await dutchAuction.getAuctionPrice(auctionId_);
 
-    if(mintForTest_) {
-        await mockERC20.mint(buyer_, sellPrice);
+    if(mintForTest_ == MINT_FOR_TEST_MINT) {
+        await mockERC20.mint(buyer_.address, sellPrice);
     }
-    const originalTokenBalance = await mockERC20.balanceOf(buyer_);
 
-    await mockERC20.connect(buyer_).approve(address(dutchAuction), sellPrice);
+    await mockERC20.connect(buyer_).approve(dutchAuction.address, sellPrice);
 
     await dutchAuction.connect(buyer_).bid(auctionId_);
 
-    if (verification_) {
+    if (verification_ == VERIFY_RESULT_VERIFY) {
         const auction = await dutchAuction.getAuction(auctionId_);
-        expect(auction.status == DAUCTION_STATUS_SOLD);
+        expect(auction.status == AUCTION_STATUS_SOLD);
         if (nftContracts[auctionId_] == NFT_CONTRACT_ERC721)
             expect(await mockERC721.ownerOf(auction.tokenId)).to.be.equal(buyer_.address);
         if (nftContracts[auctionId_] == NFT_CONTRACT_ERC721_UPGRADEABLE)
             expect(await mockERC721Upgradeable.ownerOf(auction.tokenId)).to.be.equal(buyer_.address);
-        expect(await mockERC20.balanceOf(buyer_)).to.be.equal(ethers.BigNumber.from(originalTokenBalance).sub(sellPrice));
+        expect(await mockERC20.balanceOf(buyer_.address)).to.be.gt(ethers.BigNumber.from(0));
     }
 }
 
 const help_reclaim = async (seller_, auctionId_, verification_) => {
     await dutchAuction.connect(seller_).reclaim(auctionId_);
 
-    if (verification_) {
+    if (verification_ == VERIFY_RESULT_VERIFY) {
         const auction = await dutchAuction.getAuction(auctionId_);
         expect(auction.status == AUCTION_STATUS_CLOSED);
         
@@ -178,7 +184,7 @@ const help_verify_getAuctionPrice = async (auctionId_, verification_) => {
         const sellPrice = await dutchAuction.getAuctionPrice(auctionId_);
         // console.log("timestamp, sellPrice", block.timestamp, sellPrice);
 
-        if (verification_) {
+        if (verification_ == VERIFY_RESULT_VERIFY) {
             expect(sellPrice).to.be.equal(help_calculatePrice(auction.startPrice, auction.endPrice, auction.startDate, auction.endDate));
         }
     }
@@ -218,6 +224,7 @@ module.exports = {
     // Functions
     setupProviderAndAccount,
     setupContract,
+    help_mint,
     help_createAuction,
     help_bid,
     help_reclaim,
