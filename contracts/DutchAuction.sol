@@ -55,11 +55,6 @@ contract DutchAuction is AccessControlUpgradeable {
         uint256 finalPrice
     );
 
-    event AuctionClosed(
-        uint256 indexed auctionId,
-        address indexed seller
-    );
-
     function initialize(
         IERC20Upgradeable tokenContract_
     ) external initializer {
@@ -117,7 +112,7 @@ contract DutchAuction is AccessControlUpgradeable {
         require(auctions[auctionId_].endDate < block.timestamp, "Auction is not finished");
         auctions[auctionId_].status = AUCTION_STATUS.CLOSED;
 
-        emit AuctionClosed(auctionId_, auctions[auctionId_].tokenOwner);
+        emit AuctionClosed(auctionId_, auctions[auctionId_].tokenOwner, 0);
 
         IERC721Upgradeable(auctions[auctionId_].tokenContract).transferFrom(address(this), msg.sender, auctions[auctionId_].tokenId);
     }
