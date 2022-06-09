@@ -287,9 +287,10 @@ const help_calculatePrice = (startPrice_, endPrice_, startDate_, endDate_) => {
 
 const help_verify_getAuctionPrice = async (auctionId_, verification_) => {
     const auction = await dutchAuction.getAuction(auctionId_);
-    const currentTime = block.timestamp;
+    let currentTime;
     while(currentTime <= auction.endDate) {
-        setNextTimestamp(currentTime);
+        if (currentTime) 
+            setNextTimestamp(currentTime);
 
         currentTime += (auction.endDate - auction.startDate) / LOOP_COUNT_PRICE_VERIFICATION;
         const sellPrice = await dutchAuction.getAuctionPrice(auctionId_);

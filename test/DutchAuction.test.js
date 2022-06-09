@@ -406,6 +406,34 @@ describe("DutchAuction", function () {
     });
   })
 
+  describe("Testing settings", function () {
+    it("verifyNftIsValid() return true for mockERC721", async function () {
+      const tokenContract = mockERC721.address;
+      expect(await dutchAuction.verifyNftIsValid(tokenContract)).to.be.true;
+    });
+    it("verifyNftIsValid() return true for mockERC721Upgradeable", async function () {
+      const tokenContract = mockERC721Upgradeable.address;
+      expect(await dutchAuction.verifyNftIsValid(tokenContract)).to.be.true;
+    });
+    it("setNftContract() test with mockERC721", async function () {
+      const tokenContract = mockERC721.address;
+      const tx = await dutchAuction.setNftContract(tokenContract, true);
+      const receipt = await tx.wait();
+      expect(receipt.status).to.be.equal(1);
+    });
+    it("setNftContract() test withmockERC721", async function () {
+      const tokenContract = mockERC721Upgradeable.address;
+      const tx = await dutchAuction.setNftContract(tokenContract, true);
+      const receipt = await tx.wait();
+      expect(receipt.status).to.be.equal(1);
+    });
+    it("setToken() test with mockERC20", async function () {
+      const tokenContract = mockERC20.address;
+      const tx = await dutchAuction.setToken(tokenContract);
+      const receipt = await tx.wait();
+      expect(receipt.status).to.be.equal(1);
+    });
+  })
   describe("Testing createAuction() & getAuctionPrice()", function () {
     it("getAuctionPrice()", async function () {
       const seller = user1;
@@ -437,6 +465,39 @@ describe("DutchAuction", function () {
         endDate
       );
       Helper.help_verify_getAuctionPrice(auctionId, Helper.VERIFY_RESULT_VERIFY);
+    });
+
+    it("getAuctionPrice() before startDate", async function () {
+      const seller = user1;
+      const tokenContract = mockERC721.address;
+      const tokenId = 3;
+      const startDate = ethers.BigNumber.from(50).add(currentTimestamp);
+      const startPrice = ethers.utils.parseEther("30");
+      const endDate = ethers.BigNumber.from(5).add(1000).add(currentTimestamp);
+      const endPrice = ethers.utils.parseEther("1");
+
+      await Helper.help_createAuction(
+        seller,
+        tokenContract,
+        tokenId,
+        startDate,
+        startPrice,
+        endDate,
+        endPrice,
+        Helper.NFT_CONTRACT_ERC721,
+        Helper.VERIFY_RESULT_VERIFY,
+        Helper.MINT_FOR_TEST_MINT
+      );
+      const auctionId = await dutchAuction.getAuctionId(
+        seller.address,
+        tokenContract,
+        tokenId,
+        startDate,
+        startPrice,
+        endDate
+      );
+      const sellPrice = await dutchAuction.getAuctionPrice(auctionId)
+      expect(sellPrice).to.be.equal(startPrice)
     });
 
     it("getAuctionPrice() try prime number", async function () {
