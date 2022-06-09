@@ -28,6 +28,9 @@ describe("DutchAuction", function () {
     currentTimestamp = (await ethers.provider.getBlock(currentBlock)).timestamp;
   });
 
+  // Multiple tests cases data
+  const testCases = Helper.TEST_CASES_DATA;
+
   describe("Testing createAuction()", function () {
     it("createAuction() using token from mockERC721", async function () {
       const seller = user1;
@@ -76,7 +79,40 @@ describe("DutchAuction", function () {
     });
   });
 
-  describe("Testing bid()", function () {
+  describe("Multiple createAuction() tests", function () {
+    testCases.forEach(async function (testCase) {
+      it("createAuction() using token from mockERC721, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721.address,
+          testCase.tokenId,
+          testCase.startDate.add(currentTimestamp),
+          ethers.utils.parseEther(testCase.startPrice),
+          testCase.endDate.add(currentTimestamp),
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+      });
+      it("createAuction() using token from mockERC721Upgradeable, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          testCase.startDate.add(currentTimestamp),
+          ethers.utils.parseEther(testCase.startPrice),
+          testCase.endDate.add(currentTimestamp),
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721_UPGRADEABLE,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+      });
+    });
+  })
+
+  describe("Testing createAuction() & bid()", function () {
     it("bid() on auction using mockERC721", async function () {
       const seller = user1;
       const tokenContract = mockERC721.address;
@@ -100,8 +136,6 @@ describe("DutchAuction", function () {
         Helper.MINT_FOR_TEST_MINT
       );
       await Helper.setNextTimestamp(currentTimestamp + 10);
-      await Helper.rollBlocks(currentBlock + 1);
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -110,7 +144,6 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       await Helper.help_bid(
         buyer,
         auctionId,
@@ -141,8 +174,6 @@ describe("DutchAuction", function () {
         Helper.MINT_FOR_TEST_MINT
       );
       await Helper.setNextTimestamp(currentTimestamp + 10);
-      await Helper.rollBlocks(currentBlock + 1);
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -151,7 +182,6 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       await Helper.help_bid(
         buyer,
         auctionId,
@@ -161,7 +191,78 @@ describe("DutchAuction", function () {
     });
   });
 
-  describe("Testing createAuction()", function () {
+  describe("Multiple createAuction() & bid() tests", function () {
+    beforeEach(async function () {
+      currentBlock = await ethers.provider.getBlockNumber();
+      currentTimestamp = (await ethers.provider.getBlock(currentBlock)).timestamp;
+    });
+    testCases.forEach(async function (testCase) {
+      it("bid() using token from mockERC721, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        const startDate = testCase.startDate < currentTimestamp ? testCase.startDate.add(currentTimestamp) : testCase.startDate;
+        const endDate = testCase.endDate.sub(testCase.startDate).add(startDate);
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate,
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+        await Helper.setNextTimestamp(startDate.toNumber() + 5);
+        const auctionId = await dutchAuction.getAuctionId(
+          (await Helper.serveUser(testCase.seller, owner, user1, user2, user3)).address,
+          mockERC721.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate
+        );
+        await Helper.help_bid(
+          await Helper.serveUser(testCase.buyer, owner, user1, user2, user3),
+          auctionId,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+      });
+      it("bid() using token from mockERC721Upgradeable, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        const startDate = testCase.startDate < currentTimestamp ? testCase.startDate.add(currentTimestamp) : testCase.startDate;
+        const endDate = testCase.endDate.sub(testCase.startDate).add(startDate);
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate,
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721_UPGRADEABLE,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+        await Helper.setNextTimestamp(startDate.toNumber() + 5);
+        const auctionId = await dutchAuction.getAuctionId(
+          (await Helper.serveUser(testCase.seller, owner, user1, user2, user3)).address,
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate
+        );
+        await Helper.help_bid(
+          await Helper.serveUser(testCase.buyer, owner, user1, user2, user3),
+          auctionId,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+      });
+    });
+  })
+
+  describe("Testing createAuction() & reclaim()", function () {
     it("reclaim() on auction using mockERC721", async function () {
       const seller = user1;
       const tokenContract = mockERC721.address;
@@ -183,7 +284,6 @@ describe("DutchAuction", function () {
         Helper.VERIFY_RESULT_VERIFY,
         Helper.MINT_FOR_TEST_MINT
       );
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -192,10 +292,7 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       await Helper.setNextTimestamp(endDate.add(10).toNumber());
-      await Helper.rollBlocks(currentBlock + 1);
-
       await Helper.help_reclaim(
         seller,
         auctionId,
@@ -223,7 +320,6 @@ describe("DutchAuction", function () {
         Helper.VERIFY_RESULT_VERIFY,
         Helper.MINT_FOR_TEST_MINT
       );
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -232,10 +328,7 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       await Helper.setNextTimestamp(endDate.add(10).toNumber());
-      await Helper.rollBlocks(currentBlock + 1);
-
       await Helper.help_reclaim(
         seller,
         auctionId,
@@ -244,7 +337,76 @@ describe("DutchAuction", function () {
     });
   });
 
-  describe("Testing getAuctionPrice()", function () {
+  describe("Multiple createAuction() & reclaim() tests", function () {
+    beforeEach(async function () {
+      currentBlock = await ethers.provider.getBlockNumber();
+      currentTimestamp = (await ethers.provider.getBlock(currentBlock)).timestamp;
+    });
+    testCases.forEach(async function (testCase) {
+      it("reclaim() using token from mockERC721, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        const startDate = testCase.startDate < currentTimestamp ? testCase.startDate.add(currentTimestamp) : testCase.startDate;
+        const endDate = testCase.endDate.sub(testCase.startDate).add(startDate);
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate,
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+        await Helper.setNextTimestamp(endDate.toNumber() + 5);
+        const auctionId = await dutchAuction.getAuctionId(
+          (await Helper.serveUser(testCase.seller, owner, user1, user2, user3)).address,
+          mockERC721.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate
+        );
+        await Helper.help_reclaim(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          auctionId,
+          Helper.VERIFY_RESULT_VERIFY
+        );
+      });
+      it("reclaim() using token from mockERC721Upgradeable, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        const startDate = testCase.startDate < currentTimestamp ? testCase.startDate.add(currentTimestamp) : testCase.startDate;
+        const endDate = testCase.endDate.sub(testCase.startDate).add(startDate);
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate,
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721_UPGRADEABLE,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+        await Helper.setNextTimestamp(endDate.toNumber() + 5);
+        const auctionId = await dutchAuction.getAuctionId(
+          (await Helper.serveUser(testCase.seller, owner, user1, user2, user3)).address,
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate
+        );
+        await Helper.help_reclaim(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          auctionId,
+          Helper.VERIFY_RESULT_VERIFY
+        );
+      });
+    });
+  })
+
+  describe("Testing createAuction() & getAuctionPrice()", function () {
     it("getAuctionPrice()", async function () {
       const seller = user1;
       const tokenContract = mockERC721.address;
@@ -266,7 +428,6 @@ describe("DutchAuction", function () {
         Helper.VERIFY_RESULT_VERIFY,
         Helper.MINT_FOR_TEST_MINT
       );
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -275,7 +436,6 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       Helper.help_verify_getAuctionPrice(auctionId, Helper.VERIFY_RESULT_VERIFY);
     });
 
@@ -300,7 +460,6 @@ describe("DutchAuction", function () {
         Helper.VERIFY_RESULT_VERIFY,
         Helper.MINT_FOR_TEST_MINT
       );
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -309,7 +468,6 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       Helper.help_verify_getAuctionPrice(auctionId, Helper.VERIFY_RESULT_VERIFY);
     });
 
@@ -334,7 +492,6 @@ describe("DutchAuction", function () {
         Helper.VERIFY_RESULT_VERIFY,
         Helper.MINT_FOR_TEST_MINT
       );
-
       const auctionId = await dutchAuction.getAuctionId(
         seller.address,
         tokenContract,
@@ -343,10 +500,70 @@ describe("DutchAuction", function () {
         startPrice,
         endDate
       );
-
       Helper.help_verify_getAuctionPrice(auctionId, Helper.VERIFY_RESULT_VERIFY);
     });
   });
+
+  describe("Multiple createAuction() & getAuctionPrice() tests", function () {
+    beforeEach(async function () {
+      currentBlock = await ethers.provider.getBlockNumber();
+      currentTimestamp = (await ethers.provider.getBlock(currentBlock)).timestamp;
+    });
+    testCases.forEach(async function (testCase) {
+      it("getAuctionPrice() using token from mockERC721, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        const startDate = testCase.startDate < currentTimestamp ? testCase.startDate.add(currentTimestamp) : testCase.startDate;
+        const endDate = testCase.endDate.sub(testCase.startDate).add(startDate);
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate,
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+        await Helper.setNextTimestamp(startDate.toNumber() + 5);
+        const auctionId = await dutchAuction.getAuctionId(
+          (await Helper.serveUser(testCase.seller, owner, user1, user2, user3)).address,
+          mockERC721.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate
+        );
+        Helper.help_verify_getAuctionPrice(auctionId, Helper.VERIFY_RESULT_VERIFY);
+      });
+      it("getAuctionPrice() using token from mockERC721Upgradeable, tokenId: " + testCase.tokenId + ", startPrice: " + testCase.startPrice + ", endPrice: " + testCase.endPrice, async function () {
+        const startDate = testCase.startDate < currentTimestamp ? testCase.startDate.add(currentTimestamp) : testCase.startDate;
+        const endDate = testCase.endDate.sub(testCase.startDate).add(startDate);
+        await Helper.help_createAuction(
+          await Helper.serveUser(testCase.seller, owner, user1, user2, user3),
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate,
+          ethers.utils.parseEther(testCase.endPrice),
+          Helper.NFT_CONTRACT_ERC721_UPGRADEABLE,
+          Helper.VERIFY_RESULT_VERIFY,
+          Helper.MINT_FOR_TEST_MINT
+        );
+        await Helper.setNextTimestamp(startDate.toNumber() + 5);
+        const auctionId = await dutchAuction.getAuctionId(
+          (await Helper.serveUser(testCase.seller, owner, user1, user2, user3)).address,
+          mockERC721Upgradeable.address,
+          testCase.tokenId,
+          startDate,
+          ethers.utils.parseEther(testCase.startPrice),
+          endDate
+        );
+        Helper.help_verify_getAuctionPrice(auctionId, Helper.VERIFY_RESULT_VERIFY);
+      });
+    });
+  })
 
   describe("Testing for errors", function () {
     it("createAuction() without balance", async function () {

@@ -26,6 +26,117 @@ let mockERC721Upgradeable;
 
 let nftContracts = [];
 
+const TEST_CASES_DATA = [
+    {
+      seller: "user1",
+      tokenId: 1,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "200",
+      endDate: ethers.BigNumber.from(5).add(10),
+      endPrice: "1",
+      buyer: "user2"
+    },
+    {
+      seller: "user2",
+      tokenId: 2,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "100",
+      endDate: ethers.BigNumber.from(5).add(100),
+      endPrice: "50",
+      buyer: "owner"
+    },
+    {
+      seller: "owner",
+      tokenId: 3,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "99",
+      endDate: ethers.BigNumber.from(5).add(200),
+      endPrice: "1",
+      buyer: "user3"
+    },
+    {
+      seller: "user3",
+      tokenId: 3,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "0.5",
+      endDate: ethers.BigNumber.from(5).add(200),
+      endPrice: "0.25",
+      buyer: "user1"
+    },
+    {
+      seller: "user3",
+      tokenId: 3,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "1",
+      endDate: ethers.BigNumber.from(5).add(300),
+      endPrice: "0.5",
+      buyer: "user2"
+    },
+    {
+      seller: "user2",
+      tokenId: 1,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "99",
+      endDate: ethers.BigNumber.from(5).add(500),
+      endPrice: "0.0099",
+      buyer: "user1"
+    },
+    {
+      seller: "user3",
+      tokenId: 7,
+      startDate: ethers.BigNumber.from(50),
+      startPrice: "100",
+      endDate: ethers.BigNumber.from(5).add(2000),
+      endPrice: "0.1",
+      buyer: "user2"
+    },
+    {
+      seller: "user1",
+      tokenId: 12,
+      startDate: ethers.BigNumber.from(45),
+      startPrice: "19",
+      endDate: ethers.BigNumber.from(5).add(50000),
+      endPrice: "0.0019",
+      buyer: "user2"
+    },
+    {
+      seller: "user2",
+      tokenId: 25,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "1",
+      endDate: ethers.BigNumber.from(5).add(15000),
+      endPrice: "0.001",
+      buyer: "user3"
+    },
+    {
+      seller: "user3",
+      tokenId: 100,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "1",
+      endDate: ethers.BigNumber.from(5).add(1000000),
+      endPrice: "0.001",
+      buyer: "user1"
+    },
+    {
+      seller: "owner",
+      tokenId: 500,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "1",
+      endDate: ethers.BigNumber.from(5).add(2000000),
+      endPrice: "0",
+      buyer: "user1"
+    },
+    {
+      seller: "user2",
+      tokenId: 999,
+      startDate: ethers.BigNumber.from(5),
+      startPrice: "0.1",
+      endDate: ethers.BigNumber.from(5).add(3000000),
+      endPrice: "0",
+      buyer: "user3"
+    }
+];
+
 const setupProviderAndAccount = async () => {
     if (network.name === 'hardhat')
         provider = ethers.provider;
@@ -210,8 +321,20 @@ const setNextTimestamp = async (timestamp) => {
     await network.provider.send("evm_mine");
 }
 
+const serveUser = async (userWanted, owner, user1, user2, user3) => {
+    if (userWanted == "owner")
+        return owner;
+    if (userWanted == "user1")
+        return user1;
+    if (userWanted == "user2")
+        return user2;
+    if (userWanted == "user3")
+        return user3;
+}
+
 module.exports = {
     // Constants
+    TEST_CASES_DATA,
     AUCTION_STATUS_NOT_ASSIGNED,
     AUCTION_STATUS_STARTED,
     AUCTION_STATUS_SOLD,
@@ -231,5 +354,6 @@ module.exports = {
     help_calculatePrice,
     help_verify_getAuctionPrice,
     rollBlocks,
-    setNextTimestamp
+    setNextTimestamp,
+    serveUser
 };
