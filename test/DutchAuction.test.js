@@ -716,7 +716,7 @@ describe("DutchAuction", function () {
         Helper.VERIFY_RESULT_VERIFY,
         Helper.MINT_FOR_TEST_MINT
       );
-      await Helper.rollBlocks(currentBlock + 5);
+      await Helper.setNextTimestamp(currentTimestamp + 5);
       let error = false;
       try {
         await Helper.help_createAuction(

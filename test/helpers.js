@@ -302,21 +302,6 @@ const help_verify_getAuctionPrice = async (auctionId_, verification_) => {
     }
 }
 
-const rollBlocks = async (numberOfBlock) => {
-    const currentBlock = await provider.getBlockNumber();
-    let temp = currentBlock;
-    while (temp < currentBlock + numberOfBlock) {
-        if (network.name === 'hardhat') {
-            // Mine 1 block
-            await provider.send('evm_mine');
-        } else {
-            // wait 14 seconds
-            await new Promise((resolve) => setTimeout(resolve, 10000));
-        }
-        temp = await provider.getBlockNumber();
-    }
-};
-
 const setNextTimestamp = async (timestamp) => {
     await network.provider.send("evm_setNextBlockTimestamp", [timestamp]);
     await network.provider.send("evm_mine");
@@ -354,7 +339,6 @@ module.exports = {
     help_reclaim,
     help_calculatePrice,
     help_verify_getAuctionPrice,
-    rollBlocks,
     setNextTimestamp,
     serveUser
 };
