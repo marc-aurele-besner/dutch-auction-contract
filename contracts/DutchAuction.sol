@@ -108,11 +108,12 @@ contract DutchAuction is AccessControlUpgradeable {
     function reclaim(uint256 auctionId_) external {
         require(auctions[auctionId_].status == AUCTION_STATUS.STARTED, "DutchAuction: Auction id not valid or already finished");
         require(auctions[auctionId_].endDate < block.timestamp, "DutchAuction: Auction is not finished");
+        require(auctions[auctionId_].tokenOwner == msg.sender, "DutchAuction: Only the auction owner can reclaim the token");
         auctions[auctionId_].status = AUCTION_STATUS.CLOSED;
 
         emit AuctionClosed(auctionId_, auctions[auctionId_].tokenOwner, 0);
 
-        IERC721Upgradeable(auctions[auctionId_].tokenContract).transferFrom(address(this), msg.sender, auctions[auctionId_].tokenId);
+        IERC721Upgradeable(auctions[auctionId_].tokenContract).transferFrom(address(this), auctions[auctionId_].tokenOwner, auctions[auctionId_].tokenId);
     }
 
     function getAuctionPrice(uint256 auctionId_) public view returns (uint256) {
