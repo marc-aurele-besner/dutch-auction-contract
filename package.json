@@ -1,4 +1,31 @@
 {
+  "name": "dutch-auction-contract",
+  "version": "0.0.1",
+  "description": "Dutch Auction Smart Contract",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marc-aurele-besner/dutch-auction-contract.git"
+  },
+  "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
+  "license": "MIT",
+  "main": "index.js",
+  "bugs": {
+    "url": "https://github.com/marc-aurele-besner/dutch-auction-contract/issues"
+  },
+  "keywords": [
+    "hardhat",
+    "dutch-auction",
+    "smart-contract",
+    "ethereum",
+    "solidity"
+  ],
+  "scripts": {
+    "test": "npx hardhat test && forge test",
+    "flatten": "npx hardhat flatten > contractsFlatten/Flat.sol && npx hardhat flatten contracts/DutchAuction > contractsFlatten/DutchAuctionFlat.sol",
+    "prettier-test": "prettier --write test/",
+    "prettier-contracts": "prettier --write contracts/",
+    "prettier-foundry-contracts": "prettier --write contracts/test/"
+  },
   "dependencies": {
     "hardhat-awesome-cli": "^0.0.15"
   },
