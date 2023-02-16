@@ -10,7 +10,7 @@ import "./Controlable.sol";
 import "../libs/DutchAuctionModel.sol";
 
 contract Auctionable is Controlable {
-    mapping(uint256 => DutchAuctionModel.Auctions) auctions;
+    mapping(bytes32 => DutchAuctionModel.Auctions) auctions;
 
     function __Auctionable_init() internal onlyInitializing {
         __Auctionable_init_unchained();
@@ -34,7 +34,7 @@ contract Auctionable is Controlable {
         require(validNfts[nftContract_], "DutchAuction: Token contract is not valid");
         IERC721Upgradeable(nftContract_).transferFrom(msg.sender, address(this), tokenId_);
 
-        uint256 auctionId = _getAuctionId(msg.sender, nftContract_, tokenId_, startDate_, startPrice_, endDate_);
+        bytes32 auctionId = _getAuctionId(msg.sender, nftContract_, tokenId_, startDate_, startPrice_, endDate_);
         require(auctions[auctionId].status == DutchAuctionModel.AUCTION_STATUS.NOT_ASSIGNED, "Auction already exists");
 
         auctions[auctionId] = DutchAuctionModel.Auctions(
@@ -52,19 +52,21 @@ contract Auctionable is Controlable {
         return true;
     }
 
-    function _bid(uint256 auctionId_) internal returns (bool success) {
+    function _bid(bytes32 auctionId_) internal returns (bool success) {
+        DutchAuctionModel.Auctions memory auction = auctions[auctionId_];
         uint256 bidPrice = _getAuctionPrice(auctionId_);
         require(bidPrice > 0, "DutchAuction: Auction id not valid or already finished");
-        auctions[auctionId_].status = DutchAuctionModel.AUCTION_STATUS.SOLD;
 
-        require(token.transferFrom(msg.sender, auctions[auctionId_].tokenOwner, bidPrice), "DutchAuction: Failed to transfer token");
+        require(token.transferFrom(msg.sender, auction.tokenOwner, bidPrice), "DutchAuction: Failed to transfer token");
+
+        auctions[auctionId_].status = DutchAuctionModel.AUCTION_STATUS.SOLD;
         emit DutchAuctionModel.AuctionClosed(auctionId_, msg.sender, bidPrice);
 
-        IERC721Upgradeable(auctions[auctionId_].tokenContract).transferFrom(address(this), msg.sender, auctions[auctionId_].tokenId);
+        IERC721Upgradeable(auction.tokenContract).transferFrom(address(this), msg.sender, auction.tokenId);
         return true;
     }
 
-    function _reclaim(uint256 auctionId_) internal returns (bool success) {
+    function _reclaim(bytes32 auctionId_) internal returns (bool success) {
         require(auctions[auctionId_].status == DutchAuctionModel.AUCTION_STATUS.STARTED, "DutchAuction: Auction id not valid or already finished");
         require(auctions[auctionId_].endDate < block.timestamp, "DutchAuction: Auction is not finished");
         require(auctions[auctionId_].tokenOwner == msg.sender, "DutchAuction: Only the auction owner can reclaim the token");
@@ -76,7 +78,15 @@ contract Auctionable is Controlable {
         return true;
     }
 
-    function _getAuctionPrice(uint256 auctionId_) internal view returns (uint256) {
+    function _getAuction(bytes32 auctionId_) internal view returns (DutchAuctionModel.Auctions memory) {
+        return auctions[auctionId_];
+    }
+
+    function _verifyNftIsValid(address tokenContract_) internal view returns (bool isValid) {
+        return validNfts[tokenContract_];
+    }
+
+    function _getAuctionPrice(bytes32 auctionId_) internal view returns (uint256) {
         DutchAuctionModel.Auctions memory auction = auctions[auctionId_];
         require(auction.status == DutchAuctionModel.AUCTION_STATUS.STARTED, "DutchAuction: Auction id not valid or already finished");
         require(auction.endDate >= block.timestamp, "DutchAuction: Auction has already finished");
@@ -90,6 +100,7 @@ contract Auctionable is Controlable {
                 auction.endPrice);
     }
 
+
     function _getAuctionId(
         address owner_,
         address tokenContract_,
@@ -97,9 +108,8 @@ contract Auctionable is Controlable {
         uint256 startDate_,
         uint256 startPrice_,
         uint256 endDate_
-    ) internal pure returns (uint256) {
-        return uint256(
-            keccak256(
+    ) public pure returns (bytes32) {
+        return keccak256(
                 abi.encodePacked(
                     owner_,
                     tokenContract_,
@@ -108,15 +118,6 @@ contract Auctionable is Controlable {
                     startPrice_,
                     endDate_
                 )
-            )
-        );
-    }
-
-    function _getAuction(uint256 auctionId_) internal view returns (DutchAuctionModel.Auctions memory) {
-        return auctions[auctionId_];
-    }
-
-    function _verifyNftIsValid(address tokenContract_) internal view returns (bool isValid) {
-        return validNfts[tokenContract_];
+            );
     }
 }

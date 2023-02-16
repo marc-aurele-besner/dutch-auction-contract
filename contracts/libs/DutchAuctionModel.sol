@@ -31,7 +31,7 @@ library DutchAuctionModel {
     }
 
     event AuctionCreated(
-        uint256 indexed auctionId,
+        bytes32 indexed auctionId,
         address indexed seller,
         address indexed tokenContract,
         uint256 tokenId,
@@ -42,7 +42,7 @@ library DutchAuctionModel {
     );
 
     event AuctionClosed(
-        uint256 indexed auctionId,
+        bytes32 indexed auctionId,
         address indexed buyer,
         uint256 finalPrice
     );
