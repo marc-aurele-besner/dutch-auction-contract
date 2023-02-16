@@ -1,0 +1,26 @@
+[
+  {
+    "name": "MockERC20",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "network": "hardhat",
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "deploymentDate": "Wed Feb 15 2023 20:24:37 GMT-0500 (Eastern Standard Time)",
+    "chainId": 0,
+    "blockHash": "",
+    "blockNumber": 0,
+    "tag": "",
+    "extra": {}
+  },
+  {
+    "name": "DutchAuction",
+    "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "network": "hardhat",
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "deploymentDate": "Wed Feb 15 2023 20:24:38 GMT-0500 (Eastern Standard Time)",
+    "chainId": 0,
+    "blockHash": "",
+    "blockNumber": 0,
+    "tag": "",
+    "extra": {}
+  }
+]
