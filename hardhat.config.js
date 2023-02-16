@@ -1,24 +1,57 @@
-require("@nomiclabs/hardhat-waffle");
-require("hardhat-awesome-cli");
-require("solidity-coverage");
-require("@openzeppelin/hardhat-upgrades");
+require('dotenv').config();
+require('@nomicfoundation/hardhat-toolbox');
+require('hardhat-awesome-cli');
+require('transaction-retry-tool');
+require('@openzeppelin/hardhat-upgrades');
 
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners();
+const { RPC_MAINNET, RPC_GOERLI, PRIVATE_KEY_MAINNET, PRIVATE_KEY_GOERLI, ETHERSCAN_API_KEY } = process.env;
+let { DUMMY_PRIVATE_KEY } = process.env;
 
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
+// if (!DUMMY_PRIVATE_KEY) throw new Error('Please set your DUMMY_PRIVATE_KEY in a .env.development file');
+if (!DUMMY_PRIVATE_KEY) DUMMY_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
-
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.4",
+  networks: {
+    hardhat: {},
+    mainnet: {
+      url: `${RPC_MAINNET}`,
+      chainId: 1,
+      gas: 15000000,
+      gasPrice: 2000000000,
+      accounts: [`${PRIVATE_KEY_MAINNET || DUMMY_PRIVATE_KEY}`]
+    },
+    goerli: {
+      url: `${RPC_GOERLI}`,
+      chainId: 5,
+      gas: 15000000,
+      gasPrice: 2000000000,
+      accounts: [`${PRIVATE_KEY_GOERLI || DUMMY_PRIVATE_KEY}`]
+    },
+    anvil: {
+      url: `http://127.0.0.1:8545`,
+      chainId: 9999,
+      gas: 15000000,
+      gasPrice: 2000000000,
+      accounts: [`${DUMMY_PRIVATE_KEY}`]
+    }
+  },
+  etherscan: {
+    apiKey: {
+      mainnet: `${ETHERSCAN_API_KEY}`,
+      goerli: `${ETHERSCAN_API_KEY}`
+    }
+  },
+  solidity: {
+    version: '0.8.18',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  },
+  mocha: {
+    timeout: 200000
+  }
 };
