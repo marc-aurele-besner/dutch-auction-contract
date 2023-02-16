@@ -78,7 +78,7 @@ contract DutchAuctionTest is SetupTest {
             CONTRACT.ERC721,
             VERIFY_RESULT.VERIFY,
             MINT_FOR_TEST.DO_NOT_MINT,
-            ERROR_OPPERATOR_NOEXIST_TOKEN
+            ERROR_INVALID_TOKEN
         );
     }
 

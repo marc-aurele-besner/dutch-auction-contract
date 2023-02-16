@@ -49,6 +49,7 @@ contract SetupTest is DSTest {
 
     uint16 constant LOOP_COUNT_PRICE_VERIFICATION = 10;
 
+    bytes constant ERROR_INVALID_TOKEN = "ERC721: invalid token ID";
     bytes constant ERROR_OWNER_NOEXIST_TOKEN = "ERC721: owner query for nonexistent token";
     bytes constant ERROR_OPPERATOR_NOEXIST_TOKEN = "ERC721: operator query for nonexistent token";
 
