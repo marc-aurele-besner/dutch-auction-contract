@@ -107,7 +107,7 @@ contract DutchAuctionTest is SetupTest {
         vm.warp(block.timestamp + 10);
         vm.roll(block.number + 1);
 
-        uint256 auctionId = dutchAuction.getAuctionId(
+        bytes32 auctionId = dutchAuction.getAuctionId(
             seller,
             tokenContract,
             tokenId,
@@ -148,7 +148,7 @@ contract DutchAuctionTest is SetupTest {
         vm.warp(endDate + 10);
         vm.roll(block.number + 100);
 
-        uint256 auctionId = dutchAuction.getAuctionId(
+        bytes32 auctionId = dutchAuction.getAuctionId(
             seller,
             tokenContract,
             tokenId,
@@ -186,7 +186,7 @@ contract DutchAuctionTest is SetupTest {
             MINT_FOR_TEST.MINT
         );
 
-        uint256 auctionId = dutchAuction.getAuctionId(
+        bytes32 auctionId = dutchAuction.getAuctionId(
             seller,
             tokenContract,
             tokenId,
@@ -220,7 +220,7 @@ contract DutchAuctionTest is SetupTest {
             MINT_FOR_TEST.MINT
         );
 
-        uint256 auctionId = dutchAuction.getAuctionId(
+        bytes32 auctionId = dutchAuction.getAuctionId(
             seller,
             tokenContract,
             tokenId,
@@ -254,7 +254,7 @@ contract DutchAuctionTest is SetupTest {
             MINT_FOR_TEST.MINT
         );
 
-        uint256 auctionId = dutchAuction.getAuctionId(
+        bytes32 auctionId = dutchAuction.getAuctionId(
             seller,
             tokenContract,
             tokenId,

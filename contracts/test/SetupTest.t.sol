@@ -9,9 +9,10 @@ pragma solidity ^0.8.0;
 import "./utils/console.sol";
 import "./utils/stdlib.sol";
 import "./utils/test.sol";
-import {CheatCodes} from "./utils/cheatcodes.sol";
+import { CheatCodes } from "./utils/cheatcodes.sol";
 
 import { DutchAuction, IERC20Upgradeable } from "../DutchAuction.sol";
+import { DutchAuctionModel } from "../libs/DutchAuctionModel.sol";
 import { MockERC20 } from "../mocks/MockERC20.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
 import { MockERC721Upgradeable } from "../mocks/MockERC721Upgradeable.sol";
@@ -61,7 +62,7 @@ contract SetupTest is DSTest {
     bytes constant ERROR_AUCTION_NOT_FINISHED = "DutchAuction: Auction is not finished";
     bytes constant ERROR_AUCTION_ALREADY_FINISHED = "DutchAuction: Auction has already finished";
 
-    mapping(uint256 => CONTRACT) public nftContracts;
+    mapping(bytes32 => CONTRACT) public nftContracts;
 
     function deployAndInitializeAllContracts() public {
         // Set block.number and block.timestamp to 1 instead of 0
@@ -147,10 +148,10 @@ contract SetupTest is DSTest {
         uint256 startPrice_,
         uint256 endDate_,
         uint256 endPrice_
-    ) public returns (uint256 auctionId) {
+    ) public returns (bytes32 auctionId) {
         vm.prank(seller_);
         dutchAuction.createAuction(
-            DutchAuction.TOKEN_TYPE.ERC721,
+            DutchAuctionModel.TOKEN_TYPE.ERC721,
             tokenContract_,
             tokenId_,
             startDate_,
@@ -177,12 +178,12 @@ contract SetupTest is DSTest {
             help_mint(seller_, seller_, tokenId_, nftContractType_, verification_);
             help_approve(seller_, address(dutchAuction), tokenId_, nftContractType_);
         }
-        uint256 auctionId = help_createAuction(seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_, endPrice_);
+        bytes32 auctionId = help_createAuction(seller_, tokenContract_, tokenId_, startDate_, startPrice_, endDate_, endPrice_);
         nftContracts[auctionId] = nftContractType_;
 
         if (verification_ == VERIFY_RESULT.VERIFY) {
-            DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId);
-            assertTrue(auction.status == DutchAuction.AUCTION_STATUS.STARTED);
+            DutchAuctionModel.Auctions memory auction = dutchAuction.getAuction(auctionId);
+            assertTrue(auction.status == DutchAuctionModel.AUCTION_STATUS.STARTED);
             if (nftContracts[auctionId] == CONTRACT.ERC721) {
                 assertTrue(auction.tokenContract == address(mockERC721));
                 assertEq(mockERC721.ownerOf(auction.tokenId), address(dutchAuction));
@@ -215,7 +216,7 @@ contract SetupTest is DSTest {
         vm.prank(seller_);
         vm.expectRevert(revertMessage_);
         dutchAuction.createAuction(
-            DutchAuction.TOKEN_TYPE.ERC721,
+            DutchAuctionModel.TOKEN_TYPE.ERC721,
             tokenContract_,
             tokenId_,
             startDate_,
@@ -227,7 +228,7 @@ contract SetupTest is DSTest {
 
     function help_bid(
         address buyer_,
-        uint256 auctionId_,
+        bytes32 auctionId_,
         VERIFY_RESULT verification_,
         MINT_FOR_TEST mintForTest_
     ) public {
@@ -243,8 +244,8 @@ contract SetupTest is DSTest {
         dutchAuction.bid(auctionId_);
 
         if (verification_ == VERIFY_RESULT.VERIFY) {
-            DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId_);
-            assertTrue(auction.status == DutchAuction.AUCTION_STATUS.SOLD);
+            DutchAuctionModel.Auctions memory auction = dutchAuction.getAuction(auctionId_);
+            assertTrue(auction.status == DutchAuctionModel.AUCTION_STATUS.SOLD);
             if (nftContracts[auctionId_] == CONTRACT.ERC721)
                 assertEq(mockERC721.ownerOf(auction.tokenId), buyer_);
             if (nftContracts[auctionId_] == CONTRACT.ERC721_UPGRADEABLE)
@@ -255,15 +256,15 @@ contract SetupTest is DSTest {
 
     function help_reclaim(
         address seller_,
-        uint256 auctionId_,
+        bytes32 auctionId_,
         VERIFY_RESULT verification_
     ) public {
         vm.prank(seller_);
         dutchAuction.reclaim(auctionId_);
 
         if (verification_ == VERIFY_RESULT.VERIFY) {
-            DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId_);
-            assertTrue(auction.status == DutchAuction.AUCTION_STATUS.CLOSED);
+            DutchAuctionModel.Auctions memory auction = dutchAuction.getAuction(auctionId_);
+            assertTrue(auction.status == DutchAuctionModel.AUCTION_STATUS.CLOSED);
             
             if (nftContracts[auctionId_] == CONTRACT.ERC721)
                 assertEq(mockERC721.ownerOf(auction.tokenId), auction.tokenOwner);
@@ -288,10 +289,10 @@ contract SetupTest is DSTest {
     }
 
     function help_verify_getAuctionPrice(
-        uint256 auctionId_,
+        bytes32 auctionId_,
         VERIFY_RESULT verification_
     ) public {
-        DutchAuction.Auctions memory auction = dutchAuction.getAuction(auctionId_);
+        DutchAuctionModel.Auctions memory auction = dutchAuction.getAuction(auctionId_);
         require(block.timestamp == auction.startDate, "help_verify_getAuctionPrice require current timestamps to be equal to auction start date");
         uint256 currentTime = block.timestamp;
         while(currentTime <= auction.endDate) {
